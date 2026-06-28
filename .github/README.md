@@ -10,16 +10,14 @@
   <a href="https://github.com/AshokShau/TgMusicBot/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-GPL%20v3-green?style=for-the-badge" alt="License">
   </a>
-  <img src="https://img.shields.io/badge/Version-v1.0.0-orange?style=for-the-badge" alt="Version">
-  <a href="https://t.me/ArcUpdates">
-    <img src="https://img.shields.io/badge/Team%20Arc-Updates-blue?style=for-the-badge&logo=telegram" alt="Team Arc">
+  <a href="https://github.com/AshokShau/TgMusicBot/stargazers">
+    <img src="https://img.shields.io/github/stars/AshokShau/TgMusicBot?style=for-the-badge&color=ffd700&logo=github" alt="Stars">
   </a>
 </p>
 
 <p align="center">
   A high-performance, feature-rich Telegram Music Bot written in <b>Go</b>. <br>
-  Built with <code>gotdbot</code>, <code>ntgcalls</code>, and <code>mongo-driver</code>. <br>
-  Powered by the <b>ArcMusic API</b> for fast, reliable YouTube downloads.
+  Built with <code>gotdbot</code>, <code>ntgcalls</code>, and <code>mongo-driver</code>.
 </p>
 
 <p align="center">
@@ -196,9 +194,8 @@ If you find this project useful, consider supporting its development with a dona
 </div>
 
 - 📦 Repo: [TgMusicBot on GitHub](https://github.com/AshokShau/TgMusicBot)
-- 💬 Support Chat: [Team Arc Support](https://t.me/arcchatz)
-- 🔔 Updates Channel: [Team Arc Updates](https://t.me/ArcUpdates)
-- 🐍 Old version: [TgMusicBot (Python)](https://github.com/AshokShau/TgMusicBot)
+- 💬 Support: [Telegram Group](https://t.me/FallenProjects)
+- 🐍 Old version: [TgMusicBot (Python)](https://github.com/FallenProjects/music-bot)
 
 ---
 

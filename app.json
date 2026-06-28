@@ -88,25 +88,12 @@
       "required": false
     },
     "API_URL": {
-      "description": "ArcMusic API URL — used for YouTube downloads only.",
+      "description": "API URL for external services.",
       "required": false,
-      "value": "https://api.arcmusic.fun"
+      "value": "https://tgmusic.fallenapi.fun"
     },
     "API_KEY": {
-      "description": "ArcMusic API key for YouTube downloads. Get yours from the Team Arc support chat.",
-      "required": false
-    },
-    "API_URL2": {
-      "description": "Fallen/onegrab API URL — used for Spotify, Apple Music, Deezer, SoundCloud and all other non-YouTube platforms.",
-      "required": false,
-      "value": "https://api.onegrab.fun"
-    },
-    "API_KEY2": {
-      "description": "API key for the Fallen/onegrab API (non-YouTube platforms).",
-      "required": false
-    },
-    "MEDIA_CHANNEL_ID": {
-      "description": "Telegram channel ID used as a media file cache (arcapi.medias). Pre-uploaded files are fetched from here before hitting the API.",
+      "description": "API key for external services. Get you own from @FallenApiBot -> /apikey",
       "required": false
     },
     "DEFAULT_SERVICE": {
@@ -134,12 +121,12 @@
     "SUPPORT_GROUP": {
       "description": "Link to the support group.",
       "required": false,
-      "value": "https://t.me/arcchatz"
+      "value": "https://t.me/GuardxSupport"
     },
     "SUPPORT_CHANNEL": {
       "description": "Link to the support channel.",
       "required": false,
-      "value": "https://t.me/ArcUpdates"
+      "value": "https://t.me/FallenProjects"
     },
     "SONG_DURATION_LIMIT": {
       "description": "The maximum duration of a song in seconds.",

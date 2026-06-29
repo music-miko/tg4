@@ -56,6 +56,7 @@ func main() {
 	)
 
 	slog.SetDefault(logger)
+	slog.Info("Starting TgMusicBot", "version", config.Version)
 	tdDir := "database"
 	_ = os.Remove(tdDir)
 	libPath := "./libtdjson.so.1.8.65"
@@ -72,9 +73,6 @@ func main() {
 		slog.Error("manager.RegisterClient error", "error", err)
 		os.Exit(1)
 	}
-
-	// Always set MainBot so the DB channel cache can fall back to it when DlBot is not configured.
-	dl.MainBot = client
 
 	if config.DlBotToken != "" {
 		dlClientConfig := gotdbot.DefaultClientConfig()
@@ -100,7 +98,7 @@ func main() {
 	}
 
 	handlers.LoadModules(client)
-	_, _ = client.SendTextMessage(config.LoggerId, "The bot has started!", nil)
+	_, _ = client.SendTextMessage(config.LoggerId, fmt.Sprintf("The bot has started! (v%s)", config.Version), nil)
 	manager.Idle()
 	client.Logger.Info("The bot is shutting down...")
 	vc.Calls.StopAllClients()

@@ -13,3 +13,5 @@ import (
 )
 
 var DlBot *td.Client
+
+var MainBot *td.Client

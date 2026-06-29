@@ -20,6 +20,16 @@ import (
 	td "github.com/AshokShau/gotdbot"
 )
 
+// isPhotoMessage fetches the message and returns true if its content is a photo.
+func isPhotoMessage(c *td.Client, chatID int64, msgID int64) bool {
+	msg, err := c.GetMessage(chatID, msgID)
+	if err != nil || msg == nil {
+		return false
+	}
+	_, ok := msg.Content.(*td.MessagePhoto)
+	return ok
+}
+
 // setupGuideCallbackHandler handles the "Setup Guide" button callback.
 func setupGuideCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) error {
 	_ = cb.Answer(c, 0, false, "", "")
@@ -53,6 +63,17 @@ func setupGuideCallbackHandler(c *td.Client, cb *td.UpdateNewCallbackQuery) erro
 				},
 			},
 		},
+	}
+
+	// The /start PM message is a photo — editing text on a photo message causes
+	// TDLib error 400 "There is no text in the message to edit".
+	// Use EditMessageCaption for photo messages, EditMessageText for text messages.
+	if isPhotoMessage(c, cb.ChatId, cb.MessageId) {
+		_, err := cb.EditMessageCaption(c, guideText, &td.EditCaptionOpts{
+			ParseMode:   "HTML",
+			ReplyMarkup: backBtn,
+		})
+		return err
 	}
 
 	_, err := cb.EditMessageText(c, guideText, &td.EditTextMessageOpts{

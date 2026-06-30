@@ -105,6 +105,12 @@ func (y *youTubeData) getInfo() (utils.PlatformTracks, error) {
 			}
 		}
 
+		// InnerTube exhausted — try ArcMusic search with limit 1
+		slog.Warn("InnerTube exhausted for video ID, falling back to ArcMusic search", "video_id", videoID)
+		if arcTracks, arcErr := newArcMusic().search(fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID), 1); arcErr == nil && len(arcTracks) > 0 {
+			return utils.PlatformTracks{Results: arcTracks}, nil
+		}
+
 		slog.Warn("Video ID was extracted but no matching track was found in search results", "video_id", videoID)
 		return getYouTubeVideo(ctx, videoID)
 	}
@@ -114,15 +120,23 @@ func (y *youTubeData) getInfo() (utils.PlatformTracks, error) {
 
 func (y *youTubeData) search() (utils.PlatformTracks, error) {
 	tracks, err := searchYouTube(y.Query, 5)
-	if err != nil {
-		return utils.PlatformTracks{}, err
+	if err == nil && len(tracks) > 0 {
+		return utils.PlatformTracks{Results: tracks}, nil
 	}
 
-	if len(tracks) == 0 {
+	slog.Warn("searchYouTube failed, falling back to ArcMusic search", "query", y.Query, "error", err)
+	arcTracks, arcErr := newArcMusic().search(y.Query, 3)
+	if arcErr != nil {
+		if err != nil {
+			return utils.PlatformTracks{}, fmt.Errorf("innertube: %w; arcmusic: %v", err, arcErr)
+		}
+		return utils.PlatformTracks{}, arcErr
+	}
+	if len(arcTracks) == 0 {
 		return utils.PlatformTracks{}, errors.New("no video results were found")
 	}
 
-	return utils.PlatformTracks{Results: tracks}, nil
+	return utils.PlatformTracks{Results: arcTracks}, nil
 }
 
 func (y *youTubeData) getTrack() (utils.TrackInfo, error) {

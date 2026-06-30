@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"ashokshau/tgmusic/config"
+	"ashokshau/tgmusic/src/utils"
 )
 
 // arcMusic is a dedicated client for the ArcMusic API, used exclusively for
@@ -173,6 +174,93 @@ func (a *arcMusic) pollJob(jobID string) (string, error) {
 		lastErr = errors.New("jobStatus polling exhausted retries")
 	}
 	return "", lastErr
+}
+
+// arcSearchResult models a single track item returned by /youtube/v2/search.
+// Note: the Python API uses "video_id" and a string duration ("3:45"), whereas
+// MusicTrack uses "id" and an int duration in seconds — converted below.
+type arcSearchResult struct {
+	VideoId   string `json:"video_id"`
+	Title     string `json:"title"`
+	Duration  string `json:"duration"` // "m:ss" or "h:mm:ss"
+	Views     string `json:"views"`
+	Channel   string `json:"channel"`
+	Thumbnail string `json:"thumbnail"`
+	Url       string `json:"url"`
+}
+
+// arcSearchResponse models the full response envelope of /youtube/v2/search.
+type arcSearchResponse struct {
+	Status  string            `json:"status"`
+	Results []arcSearchResult `json:"results"`
+}
+
+// durationToSeconds converts a "m:ss" or "h:mm:ss" string to total seconds.
+func durationToSeconds(d string) int {
+	parts := strings.Split(d, ":")
+	total := 0
+	for _, p := range parts {
+		n := 0
+		fmt.Sscanf(p, "%d", &n)
+		total = total*60 + n
+	}
+	return total
+}
+
+// search calls the ArcMusic /youtube/v2/search endpoint and returns results
+// as []utils.MusicTrack, matching the shape used by the rest of the Go codebase.
+func (a *arcMusic) search(query string, limit int) ([]utils.MusicTrack, error) {
+	if !a.isConfigured() {
+		return nil, errors.New("ArcMusic API is not configured")
+	}
+
+	endpoint := fmt.Sprintf("%s/youtube/v2/search", a.ApiUrl)
+	params := url.Values{
+		"query": {query},
+		"limit": {strconv.Itoa(limit)},
+	}
+	if a.ApiKey != "" {
+		params.Set("api_key", a.ApiKey)
+	}
+
+	resp, err := sendRequest(http.MethodGet, endpoint+"?"+params.Encode(), nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("arcMusic search request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("arcMusic search read body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("arcMusic search status=%d body=%q", resp.StatusCode, string(body))
+	}
+
+	var data arcSearchResponse
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil, fmt.Errorf("arcMusic search decode: %w", err)
+	}
+
+	if data.Status != "success" || len(data.Results) == 0 {
+		return nil, errors.New("arcMusic search returned no results")
+	}
+
+	tracks := make([]utils.MusicTrack, 0, len(data.Results))
+	for _, r := range data.Results {
+		tracks = append(tracks, utils.MusicTrack{
+			Id:        r.VideoId,
+			Title:     r.Title,
+			Url:       r.Url,
+			Thumbnail: r.Thumbnail,
+			Duration:  durationToSeconds(r.Duration),
+			Channel:   r.Channel,
+			Views:     r.Views,
+			Platform:  utils.YouTube,
+		})
+	}
+	return tracks, nil
 }
 
 // resolve first checks the shared ArcMusic media cache for a Telegram-channel

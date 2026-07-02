@@ -210,15 +210,34 @@ func rebuildOGG(filename string) error {
 }
 
 // fixOGG uses ffmpeg to correct any remaining issues in the OGG file, ensuring it is playable.
+//
+// This re-encodes (rather than stream-copies) the audio. rebuildOGG only
+// patches a handful of fixed byte offsets assuming a specific header
+// layout; "-c copy" would just repackage those pages as-is without
+// validating that the resulting bitstream is actually well-formed
+// end-to-end. If it isn't, the corruption doesn't show up here — it shows
+// up later when ntgcalls' ffmpeg pipe (getMediaDescription) tries to
+// stream it live during actual voice-chat playback, where a mid-stream
+// decode failure can make the native layer silently die/restart on the
+// same input with no Go-level callback (no OnStreamEnd, no "Started
+// streaming" message, track just plays from position 0 again — which
+// matches the reported symptom). Forcing ffmpeg to fully decode+re-encode
+// here means any structural problem surfaces immediately as a caching
+// error we can log and retry, instead of as a silent failure mid-stream.
 func fixOGG(inputFile string, track utils.TrackInfo) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	sanitizedTrackID := uniqueSpotifyTrackID(track)
 	outputFile := filepath.Join(config.DownloadsDir, fmt.Sprintf("%s.ogg", sanitizedTrackID))
-	cmd := exec.CommandContext(ctx, "ffmpeg", "-i", inputFile, "-c", "copy", outputFile)
+	cmd := exec.CommandContext(ctx, "ffmpeg", "-y", "-i", inputFile, "-c:a", "libvorbis", "-qscale:a", "6", "-vn", outputFile)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("ffmpeg failed with error: %w\nOutput: %s", err, string(output))
+	}
+
+	if dur := utils.GetMediaDuration(outputFile); dur <= 0 {
+		_ = os.Remove(outputFile)
+		return "", fmt.Errorf("fixOGG produced an unplayable file for track %q (probed duration was 0)", track.Id)
 	}
 
 	return outputFile, nil

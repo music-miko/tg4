@@ -303,6 +303,7 @@ func (c *TelegramCalls) RegisterHandlers(client *td.Client) {
 				return
 			}
 
+			call.App.Logger.Warnf("[OnStreamEnd] fired: chat=%d device=%v — advancing queue", chatID, device)
 			if err := c.PlayNext(client, chatID); err != nil {
 				call.App.Logger.Warnf("[OnStreamEnd] Failed to play the song: %v", err)
 			}

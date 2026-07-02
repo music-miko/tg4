@@ -23,7 +23,16 @@ func getMediaDescription(filePath string, isVideo bool, ffmpegParameters string)
 	var audioCmd strings.Builder
 	audioCmd.WriteString("ffmpeg ")
 	if isURL {
-		audioCmd.WriteString("-reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 ")
+		// NOTE: intentionally no "-reconnect_at_eof 1" here. That flag makes
+		// ffmpeg treat a legitimate end-of-file as a dropped connection and
+		// reconnect/re-stream the URL from the start — fine for endless live
+		// streams, but for a finite track it means ffmpeg never exits on
+		// real completion, so ntgcalls never sees a clean stream end and
+		// OnStreamEnd never fires. Confirmed via logs: this is why
+		// URL-streamed tracks (e.g. Spotify CDN links played live instead
+		// of being downloaded first) silently restart from position 0
+		// forever instead of advancing to the next queued track.
+		audioCmd.WriteString("-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 ")
 	}
 
 	var seekFlags, filterFlags string
@@ -93,7 +102,7 @@ func getMediaDescription(filePath string, isVideo bool, ffmpegParameters string)
 	videoCmd.WriteString("ffmpeg ")
 
 	if isURL {
-		videoCmd.WriteString("-reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 ")
+		videoCmd.WriteString("-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 ")
 	}
 
 	if seekFlags != "" {
